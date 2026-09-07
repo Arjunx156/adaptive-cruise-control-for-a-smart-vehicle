@@ -1,4 +1,4 @@
-# control_system_project
+# Adaptive Cruise Control for a Smart Vehicle
 
 _One-line description of the project goes here._
 
