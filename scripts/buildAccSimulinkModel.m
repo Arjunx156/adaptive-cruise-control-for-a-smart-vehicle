@@ -65,8 +65,15 @@ add(name, 'simulink/User-Defined Functions/MATLAB Function', 'controller');
 setControllerScript(name);
 
 % --- Actuator lag (section 3.3) ---------------------------------------------
-add(name, 'simulink/Continuous/Transfer Fcn', 'actuator', ...
-    'Numerator', '[1]', 'Denominator', '[accParams.actuator.tau 1]');
+% Built from a summing junction, a gain and an integrator rather than a Transfer
+% Fcn block. A Transfer Fcn always starts from zero state, which would have the
+% vehicle producing no tractive effort at t = 0 while the MATLAB run starts at
+% the trim value -- a small permanent offset in every comparison.
+add(name, 'simulink/Math Operations/Sum', 'actuatorError', 'Inputs', '+-');
+add(name, 'simulink/Math Operations/Gain', 'actuatorRate', ...
+    'Gain', '1 / accParams.actuator.tau');
+add(name, 'simulink/Continuous/Integrator', 'actuator', ...
+    'InitialCondition', 'accInitial.aTrac');
 
 % --- Resistances, which the controller is not told about (section 3.1) ------
 add(name, 'simulink/Math Operations/Math Function', 'vSquared', 'Operator', 'square');
@@ -125,7 +132,10 @@ connections = {
     'vRel/1',       'controller/3'
     'setSpeed/1',   'controller/4'
 
-    'controller/1', 'actuator/1'
+    'controller/1', 'actuatorError/1'
+    'actuator/1',   'actuatorError/2'
+    'actuatorError/1', 'actuatorRate/1'
+    'actuatorRate/1',  'actuator/1'
     'actuator/1',   'egoAccel/1'
 
     'vEgo/1',       'vSquared/1'

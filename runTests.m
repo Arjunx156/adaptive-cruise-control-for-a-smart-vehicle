@@ -1,15 +1,19 @@
 function results = runTests(opts)
 %RUNTESTS Run the ACC test suite, optionally with line coverage.
 %
-%   runTests                      % run everything, report coverage
-%   runTests('Coverage', false)   % skip the coverage instrumentation
-%   runTests('Filter', "Plant")   % run only test classes matching a substring
+%   runTests                      % run everything (about 8 minutes)
+%   runTests('Coverage', true)    % add statement coverage of src/
+%   runTests('Filter', "Plant")   % run only tests whose name matches a substring
+%
+%   Coverage is off by default because the instrumentation slows the inner
+%   integration loop by well over an order of magnitude, turning an eight-minute
+%   suite into a multi-hour one. Run it deliberately, not on every change.
 %
 %   Exits with a nonzero status when run under -batch and anything fails, so CI
 %   and the command line agree on what "passing" means.
 
 arguments
-    opts.Coverage (1,1) logical = true
+    opts.Coverage (1,1) logical = false
     opts.Filter (1,1) string = ""
 end
 
@@ -43,7 +47,7 @@ fprintf('%d passed, %d failed, %d incomplete in %.1f s\n', ...
     sum([results.Duration]));
 
 if opts.Coverage
-    summary = format.Result.coverageSummary;
+    summary = coverageSummary(format.Result, "statement");
     linePercent = 100 * summary(1) / summary(2);
     fprintf('Statement coverage of src/: %.1f%% (%d of %d)\n', ...
         linePercent, summary(1), summary(2));

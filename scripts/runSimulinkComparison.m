@@ -74,7 +74,8 @@ assignin('base', 'accParams', p);
 assignin('base', 'accStopTime', scenario.tEnd);
 assignin('base', 'accInitial', struct( ...
     'sLead', scenario.x0(1), 'vLead', scenario.x0(2), ...
-    'sEgo',  scenario.x0(3), 'vEgo',  scenario.x0(4)));
+    'sEgo',  scenario.x0(3), 'vEgo',  scenario.x0(4), ...
+    'aTrac', scenario.x0(5)));
 assignin('base', 'aLeadInput', timeseries(aLeadValues, t));
 assignin('base', 'gradeInput', timeseries(gradeValues, t));
 

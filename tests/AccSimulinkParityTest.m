@@ -23,19 +23,20 @@ classdef AccSimulinkParityTest < matlab.unittest.TestCase
 
         function leadBrakingMatchesTheMatlabSimulation(testCase)
             c = runSimulinkComparison("leadBraking", "automotive", 'SaveFigures', false);
-            testCase.verifyLessThan(c.gapRmsError, 0.20, ...
+            testCase.verifyLessThan(c.gapRmsError, 0.01, ...
                 'Simulink and MATLAB gap trajectories disagree.');
-            testCase.verifyLessThan(c.speedRmsError, 0.10, ...
+            testCase.verifyLessThan(c.speedRmsError, 0.002, ...
                 'Simulink and MATLAB speed trajectories disagree.');
         end
 
         function steadyFollowMatchesTheMatlabSimulation(testCase)
-            % The undisturbed case should agree far more tightly than the
-            % transient one: there is nothing for numerical differences to
-            % amplify.
+            % With both actuator states starting from trim there is nothing for
+            % either route to get wrong here, so this should agree to numerical
+            % precision rather than merely closely. It is the test that caught
+            % the Transfer Fcn block's uninitialisable state.
             c = runSimulinkComparison("steadyFollow", "automotive", 'SaveFigures', false);
-            testCase.verifyLessThan(c.gapRmsError, 0.01);
-            testCase.verifyLessThan(c.speedRmsError, 0.01);
+            testCase.verifyLessThan(c.gapRmsError, 1e-9);
+            testCase.verifyLessThan(c.speedRmsError, 1e-9);
         end
     end
 end

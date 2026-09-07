@@ -23,7 +23,7 @@ Or from a shell:
 
 ```bash
 matlab -batch "accSetupPath; runAll"
-matlab -batch "runTests"                       % 60 tests, with coverage
+matlab -batch "runTests"                       % 60 tests, about 8 minutes
 matlab -batch "accSetupPath; runAllScenarios('automotive','ideal')"
 ```
 
@@ -36,7 +36,7 @@ Individual entry points:
 | `runWindupComparison(paramSet)` | Anti-windup strategies compared numerically |
 | `buildAccSimulinkModel()` | Generates `results/accModel.slx` from the parameter struct |
 | `runSimulinkComparison(scenario, paramSet)` | Simulink against MATLAB, same scenario |
-| `runTests()` | Full test suite with statement coverage of `src/` |
+| `runTests()` | Full test suite. `runTests('Coverage', true)` adds statement coverage of `src/`, but the instrumentation slows the integration loop by well over an order of magnitude |
 
 ---
 
@@ -119,10 +119,13 @@ Headline numbers, automotive parameters, ideal sensing:
 |---|---|---|---|---|
 | `steadyFollow` | 35.0 m | ∞ | ~0 | 0.26 m/s² |
 | `approach` | 18.3 m | 8.4 s | 0.75 m | −0.75 m/s² |
-| `leadBraking` | 4.1 m | 2.3 s | 0.89 m | −6.6 m/s² |
+| `leadBraking` | 4.2 m | 2.3 s | 0.84 m | −6.6 m/s² |
 | `leadAccelerating` | 27.5 m | ∞ | — | — |
-| `cutIn` | 17.9 m | 5.5 s | 0.03 m | −5.7 m/s² |
+| `cutIn` | 17.9 m | 5.5 s | 0.03 m | −5.8 m/s² |
 | `stopAndGo` | 5.0 m | 2.2 s | 0.82 m | −4.2 m/s² |
+
+`gradeDisturbance` and `coldStart` run on an empty road, so their gap columns carry no
+meaning; they appear in the CSVs alongside the rest.
 
 No scenario closes the gap to zero, at either parameter scale, with either sensing mode —
 this is asserted by the test suite, not just observed.
@@ -177,8 +180,13 @@ committing a binary nobody can diff. The plant is native Simulink blocks; the co
 is a MATLAB Function block calling the same control law the `.m` simulation uses, so the
 two cannot drift apart.
 
-`runSimulinkComparison` checks them against each other. On `leadBraking` they agree to
-0.04 m RMS on a gap that swings through 35 m.
+`runSimulinkComparison` checks them against each other. On `steadyFollow` they agree to
+numerical precision; on `leadBraking` to 0.003 m RMS on a gap that swings through 35 m.
+
+That check earned its place: it caught the Simulink actuator being modelled with a
+Transfer Fcn block, whose state cannot be initialised, so the block-diagram vehicle
+started with no tractive effort while the MATLAB one started at trim. Building the lag
+from a summing junction, a gain and an integrator instead removed a 14-fold error.
 
 ---
 
