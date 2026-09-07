@@ -4,17 +4,19 @@ function results = runTests(opts)
 %   runTests                      % run everything (about 8 minutes)
 %   runTests('Coverage', true)    % add statement coverage of src/
 %   runTests('Filter', "Plant")   % run only tests whose name matches a substring
+%   runTests('Filter', ["Plant" "Sensor"])   % or any of several
 %
-%   Coverage is off by default because the instrumentation slows the inner
-%   integration loop by well over an order of magnitude, turning an eight-minute
-%   suite into a multi-hour one. Run it deliberately, not on every change.
+%   Coverage is off by default. The instrumentation costs roughly a factor of
+%   nine, which is unremarkable on the unit tests but turns the end-to-end
+%   scenario tests -- already nineteen minutes of simulation -- into three hours.
+%   Run it deliberately, not on every change.
 %
 %   Exits with a nonzero status when run under -batch and anything fails, so CI
 %   and the command line agree on what "passing" means.
 
 arguments
     opts.Coverage (1,1) logical = false
-    opts.Filter (1,1) string = ""
+    opts.Filter (1,:) string = string.empty
 end
 
 accSetupPath();
@@ -26,7 +28,9 @@ import matlab.unittest.plugins.CodeCoveragePlugin
 import matlab.unittest.plugins.codecoverage.CoverageResult
 
 suite = TestSuite.fromFolder(fullfile(root, 'tests'));
-if strlength(opts.Filter) > 0
+if ~isempty(opts.Filter)
+    % contains accepts a list of patterns and matches any of them, so a filter
+    % can select several test classes at once.
     isMatch = contains(string({suite.Name}), opts.Filter, 'IgnoreCase', true);
     suite = suite(isMatch);
 end
@@ -47,10 +51,14 @@ fprintf('%d passed, %d failed, %d incomplete in %.1f s\n', ...
     sum([results.Duration]));
 
 if opts.Coverage
-    summary = coverageSummary(format.Result, "statement");
-    linePercent = 100 * summary(1) / summary(2);
-    fprintf('Statement coverage of src/: %.1f%% (%d of %d)\n', ...
-        linePercent, summary(1), summary(2));
+    % coverageSummary returns one [executed, executable] row per file, so the
+    % totals have to be summed across files rather than read off one row.
+    perFile = coverageSummary(format.Result, "statement");
+    executed = sum(perFile(:, 1));
+    executable = sum(perFile(:, 2));
+    linePercent = 100 * executed / executable;
+    fprintf('Statement coverage of src/: %.1f%% (%d of %d statements)\n', ...
+        linePercent, executed, executable);
     if linePercent < 80
         fprintf('WARNING: below the 80%% coverage target.\n');
     end

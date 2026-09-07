@@ -23,7 +23,7 @@ Or from a shell:
 
 ```bash
 matlab -batch "accSetupPath; runAll"
-matlab -batch "runTests"                       % 60 tests, about 8 minutes
+matlab -batch "runTests"                       % 75 tests, about 24 minutes
 matlab -batch "accSetupPath; runAllScenarios('automotive','ideal')"
 ```
 
@@ -129,6 +129,25 @@ meaning; they appear in the CSVs alongside the rest.
 
 No scenario closes the gap to zero, at either parameter scale, with either sensing mode —
 this is asserted by the test suite, not just observed.
+
+The suite is 75 tests across eight classes, all passing:
+
+| Class | Tests | What it pins down |
+|---|---|---|
+| `AccPlantTest` | 7 | Drag scaling, trim, actuator lag, no reversing, gap as an integral |
+| `AccSaturationTest` | 6 | Comfort vs capability limits, both emergency triggers, jerk limiting |
+| `AccControllerTest` | 14 | Min-selection, P-only offset vs PI recovery, grade rejection, both windup sources |
+| `AccSensorTest` | 6 | Range bounds, hold between samples, low-speed encoder noise, reproducibility |
+| `AccLinearTest` | 7 | Damping, plant poles, margins, transfer-function vs state-space agreement |
+| `AccScenarioTest` | 17 | End-to-end behaviour and the no-collision safety requirement |
+| `AccReportingTest` | 15 | Figure structure, metric conventions, parameter-set symmetry |
+| `AccSimulinkParityTest` | 3 | The block diagram against the `.m` simulation |
+
+Statement coverage of `src/` is **89.7%** (507 of 565 statements), measured over every
+class except `AccScenarioTest`, which is excluded from the instrumented run because
+nineteen minutes of end-to-end simulation becomes about three hours under coverage
+instrumentation. The figure is therefore a lower bound: including those seventeen tests
+can only add covered statements, never remove them.
 
 Stability margins at the tuned gains (linearised at 25 m/s):
 
