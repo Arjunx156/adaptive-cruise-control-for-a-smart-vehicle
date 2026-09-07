@@ -1,0 +1,23 @@
+# MATLAB
+*.asv
+*.m~
+*.mex*
+*.slxc
+*.autosave
+slprj/
+codegen/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# General
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
